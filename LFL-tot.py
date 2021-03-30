@@ -15,16 +15,17 @@ for i in range(n):
 	TOT = input().strip()
 	PER = input().strip()
 
-M = []
-for t1 in teams:
-	for t2 in teams:
-		if t1 < t2:
-			for i in range(2-results[t1][t2] - results[t2][t1]):
-				M += [(t1,t2)]
 
-Result = [0]*len(M)
-
-pos = {t:dict() for t in teams}
+def init(teams, results):
+	global pos, M, Result
+	pos = {t:dict() for t in teams}
+	M = []
+	for t1 in teams:
+		for t2 in teams:
+			if t1 < t2:
+				for i in range(2-results[t1][t2] - results[t2][t1]):
+					M += [(t1,t2)]
+	Result = [0]*len(M)
 
 def affect(t, p):
 	global pos
@@ -103,5 +104,27 @@ def trouve(Result, M, results, i):
 		trouve(Result, M, results, i+1)
 		results[M[i][1]][M[i][0]] -= 1
 
-trouve(Result, M, results, 0)
-pprint(pos)
+#init(teams, results)
+#trouve(Result, M, results, 0)
+#pprint(pos)
+
+def nb_matches(t1, t2, results):
+	return results[t1][t2]+results[t2][t1]
+
+def with_one_loose(t, results):
+	global teams
+	for t2 in teams:
+		if t2 != t and nb_matches(t, t2, results)<2:
+			results[t2][t] += 1
+			init(teams, results)
+			trouve(Result, M, results, 0)
+			best = 10
+			for p in pos[t]:
+				best = min(best, p[0])
+			print(
+				"""if {} loses against {}, """
+				"""then they can do at best {}""".format(t, t2, best))
+			results[t2][t] -= 1
+
+for t in teams:
+	with_one_loose(t, results)
