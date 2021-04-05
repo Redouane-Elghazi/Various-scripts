@@ -16,7 +16,7 @@ def comb_no_replacements(n, k):
 		return 0
 	return comb_no_replacements(n-1, k) + comb_no_replacements(n-1, k-1)
 
-seconds_to_years = 365*24*60*60
+seconds_to_years = 365.25*24*60*60
 approx_nb = 27000*seconds_to_years
 
 n1 = 1
@@ -25,6 +25,7 @@ while comb_replacements(n1,5) < approx_nb:
 n2 = 1
 while comb_no_replacements(n2,5) < approx_nb:
 	n2 += 1
+
 print("approx number of comb", approx_nb)
 print(
 	"found number of comb ", comb_replacements(n1, 5),
