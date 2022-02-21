@@ -1,6 +1,8 @@
 import sys
 from pprint import pprint
+import json
 
+LEAGUE = 'LEC'
 n = int(input().strip())
 teams = input().strip().split()
 results = {t:dict() for t in teams}
@@ -40,8 +42,10 @@ def tiebreaker(teams, results, offset):
 	for k in range(n):
 		affect(teams[k], p)
 	return"""
-
-	if n == 2:
+	if n == 1:
+		t = teams[0]
+		affect(t, (offset+1, offset+1))
+	elif n == 2:
 		t1, t2 = teams
 		if results[t1][t2] > results[t2][t1]:
 			affect(t1, (offset+1, offset+1))
@@ -56,19 +60,35 @@ def tiebreaker(teams, results, offset):
 		T = teams.copy()
 		W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
 		T.sort(key=lambda t:-W[t])
-		for i in range(n):
-			if W[T[i]] == 2*(n-i-1):
-				affect(T[i], (offset+i+1, offset+i+1))
+		if LEAGUE == 'LEC':
+			i = 0
+			while W[T[i]] > n-1:
+				i += 1
+			if i != 0:
+				tiebreaker(T[:i], results, offset)
+				tiebreaker(T[i:], results, offset+i)
 			else:
-				break
-		if i == n:
-			return
-		elif i == 0:
-			p = (offset+1, offset+n)
-			for k in range(n):
-				affect(T[k], p)
+				p = (offset+1, offset+n)
+				for k in range(n):
+					affect(T[k], p)
+		elif LEAGUE == 'LFL':
+			for i in range(n):
+				if W[T[i]] == 2*(n-i-1):
+					affect(T[i], (offset+i+1, offset+i+1))
+					i+=1
+				else:
+					break
+			if i == n:
+				return
+			elif i == 0:
+				p = (offset+1, offset+n)
+				for k in range(n):
+					affect(T[k], p)
+			else:
+				tiebreaker(T[i:n], results, offset+i)
 		else:
-			tiebreaker(T[i:n], results, offset+i)
+			print("tie breaker for this league not implemented", file=sys.stderr)
+			exit(0)
 
 def classements(teams, results):
 	n = len(teams)
@@ -104,9 +124,28 @@ def trouve(Result, M, results, i):
 		trouve(Result, M, results, i+1)
 		results[M[i][1]][M[i][0]] -= 1
 
-#init(teams, results)
-#trouve(Result, M, results, 0)
-#pprint(pos)
+init(teams, results)
+trouve(Result, M, results, 0)
+pprint(pos)
+with open("LEC-tot.out", 'w') as f:
+	print(pos, file=f)
+r = dict()
+for t in pos:
+	r[t] = [0,0,0]
+	for a,b in pos[t]:
+		if b<=6:
+			r[t][0] += pos[t][(a,b)]
+		if a<=6<b:
+			r[t][1] += pos[t][(a,b)]
+		if 6<a:
+			r[t][2] += pos[t][(a,b)]
+T = teams.copy()
+T.sort(key=lambda t:-r[t][0])
+with open("LEC-tot-playoff.out", 'w') as f:
+	print("Team,Percentage of scenarios in playoff,Percentage of scenarios in a tiebreak for playoff,Percentage of scenarios out of playoff", file=f)
+	for t in T:
+		print("{},{},{},{}".format(t, 100*r[t][0]/sum(r[t]), 100*r[t][1]/sum(r[t]), 100*r[t][2]/sum(r[t])), file=f)
+exit(0)
 
 def nb_matches(t1, t2, results):
 	return results[t1][t2]+results[t2][t1]
