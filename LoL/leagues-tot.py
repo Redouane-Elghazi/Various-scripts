@@ -2,20 +2,21 @@ import sys
 from pprint import pprint
 import json
 
-LEAGUE = 'LEC'
-n = int(input().strip())
-teams = input().strip().split()
-results = {t:dict() for t in teams}
-for i in range(n):
-	t1 = input().strip()
-	for j in range(n):
-		t2 = teams[j]
-		if t1 != t2:
-			w, _, l = input().strip().split()
-			w, l = int(w), int(l)
-			results[t1][t2] = w
-	TOT = input().strip()
-	PER = input().strip()
+LEAGUE = sys.argv[1]
+with open("{}-tot.in".format(LEAGUE), "r") as f:
+	n = int(f.readline().strip())
+	teams = f.readline().strip().split()
+	results = {t:dict() for t in teams}
+	for i in range(n):
+		t1 = f.readline().strip()
+		for j in range(n):
+			t2 = teams[j]
+			if t1 != t2:
+				w, _, l = f.readline().strip().split()
+				w, l = int(w), int(l)
+				results[t1][t2] = w
+		TOT = f.readline().strip()
+		PER = f.readline().strip()
 
 
 def init(teams, results):
@@ -42,7 +43,9 @@ def tiebreaker(teams, results, offset):
 	for k in range(n):
 		affect(teams[k], p)
 	return"""
-	if n == 1:
+	if n == 0:
+		pass
+	elif n == 1:
 		t = teams[0]
 		affect(t, (offset+1, offset+1))
 	elif n == 2:
@@ -59,14 +62,19 @@ def tiebreaker(teams, results, offset):
 	else:
 		T = teams.copy()
 		W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
+		L = {t1:sum(results[t2][t1] for t2 in teams if t1!=t2) for t1 in teams}
 		T.sort(key=lambda t:-W[t])
-		if LEAGUE == 'LEC':
+		if LEAGUE == 'LEC' or LEAGUE == "LFL":
 			i = 0
-			while W[T[i]] > n-1:
+			while W[T[i]] > L[T[i]]:
 				i += 1
+			j = i
+			while j<n and W[T[j]] == L[T[j]]:
+				j += 1
 			if i != 0:
 				tiebreaker(T[:i], results, offset)
-				tiebreaker(T[i:], results, offset+i)
+				tiebreaker(T[i:j], results, offset+i)
+				tiebreaker(T[j:], results, offset+j)
 			else:
 				p = (offset+1, offset+n)
 				for k in range(n):
@@ -127,7 +135,7 @@ def trouve(Result, M, results, i):
 init(teams, results)
 trouve(Result, M, results, 0)
 pprint(pos)
-with open("LEC-tot.out", 'w') as f:
+with open("{}-tot.out".format(LEAGUE), 'w') as f:
 	print(pos, file=f)
 r = dict()
 for t in pos:
@@ -141,7 +149,7 @@ for t in pos:
 			r[t][2] += pos[t][(a,b)]
 T = teams.copy()
 T.sort(key=lambda t:-r[t][0])
-with open("LEC-tot-playoff.out", 'w') as f:
+with open("{}-tot-playoff.out".format(LEAGUE), 'w') as f:
 	print("Team,Percentage of scenarios in playoff,Percentage of scenarios in a tiebreak for playoff,Percentage of scenarios out of playoff", file=f)
 	for t in T:
 		print("{},{},{},{}".format(t, 100*r[t][0]/sum(r[t]), 100*r[t][1]/sum(r[t]), 100*r[t][2]/sum(r[t])), file=f)
