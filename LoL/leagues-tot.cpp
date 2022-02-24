@@ -31,12 +31,16 @@ using namespace std;
 unordered_map<string, map<pair<ll, ll>, ll> > pos;
 vector<pair<string, string> > M;
 vector<ll> Result;
+unordered_map<string, vector<vector<vector<int> > > > match_import;
 ll nb = 0;
 void init(vector<string> &teams, unordered_map<string, unordered_map<string, ll> > &results){
     pos.clear();
+    match_import.clear();
     for(string s:teams){
         pos[s] = map<pair<ll, ll>, ll>();
+        match_import[s] = vector<vector<vector<int> > >();
     }
+
     M.clear();
     Result.clear();
     for(string t1:teams){
@@ -45,10 +49,27 @@ void init(vector<string> &teams, unordered_map<string, unordered_map<string, ll>
 				for(int i = 0; i<2-results[t1][t2]-results[t2][t1]; ++i){
                     M.emplace_back(t1, t2);
                     Result.push_back(0);
+                    for(string t:teams){
+                        match_import[t].emplace_back(2, vector<int> (3, 0));
+                    }
 				}
             }
         }
     }
+}
+
+///0 means no playoffs, 1 means tiebreak, 2 means playoffs
+ll playoff(pair<ll, ll> p){
+        ll a = p.fi, b = p.se;
+        if(b<=6){
+            return 2;
+        }
+        else if(a<=6){
+            return 1;
+        }
+        else {
+            return 0;
+        }
 }
 
 void affect(string t, pair<ll, ll> p){
@@ -56,6 +77,10 @@ void affect(string t, pair<ll, ll> p){
         pos[t][p] = 0;
     }
     pos[t][p] += 1;
+    ll P = playoff(p);
+    for(ll i = 0; i<M.size(); ++i){
+        match_import[t][i][Result[i]][P] += 1;
+    }
 }
 
 void tiebreaker(vector<string> &teams, ll i, ll j,
@@ -215,14 +240,14 @@ int main(){
         tie[t] = 0;
         los[t] = 0;
         for(auto x:pos[t]){
-            ll a = x.fi.fi, b = x.fi.se, n = x.se;
-            if(b<=6){
+            ll P = playoff(x.fi), n = x.se;
+            if(P == 2){
                 win[t] += n;
             }
-            if(a<=6 and 6<b){
+            if(P == 1){
                 tie[t] += n;
             }
-            if(6<a){
+            if(P == 0){
                 los[t] += n;
             }
         }
@@ -240,6 +265,19 @@ int main(){
                 100.0*win[t]/tot << "," <<
                 100.0*tie[t]/tot << "," <<
                 100.0*los[t]/tot << endl;
+    }
+    cout << "Team1,Team2,No playoffs with team1 wins,Tiebreaker with team1 wins,Playoffs with team1 wins,No playoffs with team2 wins,Tiebreaker with team2 wins,Playoffs with team2 wins" << endl;
+    for(string &t:teams){
+        cout << t << endl;
+        for(ll i = 0; i<M.size(); ++i){
+            cout << M[i].first << "," << M[i].second;
+            for(int w = 0; w<2; ++w){
+                for(int P = 0; P<3; ++P){
+                        cout << "," << match_import[t][i][w][P];
+                }
+            }
+            cout << endl;
+        }
     }
 	return 0;
 }
