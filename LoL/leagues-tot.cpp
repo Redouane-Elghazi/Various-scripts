@@ -266,11 +266,10 @@ int main(){
                 100.0*tie[t]/tot << "," <<
                 100.0*los[t]/tot << endl;
     }
-    cout << "Team1,Team2,No playoffs with team1 wins,Tiebreaker with team1 wins,Playoffs with team1 wins,No playoffs with team2 wins,Tiebreaker with team2 wins,Playoffs with team2 wins" << endl;
+    cout << "Team,Team1,Team2,No playoffs with team1 wins,Tiebreaker with team1 wins,Playoffs with team1 wins,No playoffs with team2 wins,Tiebreaker with team2 wins,Playoffs with team2 wins" << endl;
     for(string &t:teams){
-        cout << t << endl;
         for(ll i = 0; i<M.size(); ++i){
-            cout << M[i].first << "," << M[i].second;
+            cout << t << M[i].first << "," << M[i].second;
             for(int w = 0; w<2; ++w){
                 for(int P = 0; P<3; ++P){
                         cout << "," << match_import[t][i][w][P];
