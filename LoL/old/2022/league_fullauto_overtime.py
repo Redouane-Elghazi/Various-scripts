@@ -170,17 +170,6 @@ def tiebreaker(teams, results, offset):
 	elif n == 1:
 		t = teams[0]
 		affect(t, (offset+1, offset+1))
-	elif n == 2:
-		t1, t2 = teams
-		if results[t1][t2] > results[t2][t1]:
-			affect(t1, (offset+1, offset+1))
-			affect(t2, (offset+2, offset+2))
-		elif results[t1][t2] < results[t2][t1]:
-			affect(t1, (offset+2, offset+2))
-			affect(t2, (offset+1, offset+1))
-		else:
-			affect(t1, (offset+1, offset+2))
-			affect(t2, (offset+1, offset+2))
 	else:
 		T = teams.copy()
 		W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
@@ -274,7 +263,7 @@ for t in pos:
 	for p in pos[t]:
 		r[t][playoff(p)] += pos[t][p]
 T = teams.copy()
-T.sort(key=lambda t:(-r[t][2], -r[t][1]))
+T.sort(key=lambda t:(-sum(results[t][t2] for t2 in results[t]), -r[t][2], -r[t][1]))
 for i in range(len(posovertime)):
 	with open("{}/{}-{}-{}-fullauto-{}.out".format(LEAGUE, LEAGUE, SEASON, YEAR, start+i), 'w') as f:
 		pos = posovertime[i]

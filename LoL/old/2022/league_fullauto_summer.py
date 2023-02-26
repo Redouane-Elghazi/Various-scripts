@@ -2,18 +2,28 @@ import leaguepedia_parser
 import sys
 from pprint import pprint
 import json
+from random import random
+from math import log, exp
+from itertools import permutations
 
 LEAGUE = sys.argv[1]
 YEAR = sys.argv[2]
 SEASON = sys.argv[3]
+if len(sys.argv)>4:
+	cut = int(sys.argv[4])
+else:
+	cut = 1
 
 games = leaguepedia_parser.get_games("{}/{} Season/{} Season".format(LEAGUE, YEAR, SEASON))
 
 complete2short = {
+	"Izi Dream": "IZI",
+	"Team MCES": "MCES",
 	"Team Oplon":"OPL",
 	"Mirage Elyandra":"ME",
 	"GameWard":"GW",
 	"GamersOrigin":"GO",
+	"Team GO":"GO",
 	"Team BDS Academy":"BDSA",
 	"Solary":"SLY",
 	"Misfits Premier":"MSFP",
@@ -35,9 +45,9 @@ complete2short = {
 n = 0
 teams = []
 results = dict()
-match_import = dict()
 logos = dict()
 secondhalf = dict()
+Rs = dict()
 def newmatch(t1, t2, w):
 	void = lambda :(lambda :())
 	res = void()
@@ -55,7 +65,18 @@ def newmatch(t1, t2, w):
 		res.winner = "RED"
 	return res
 addedmatches=[]
-#addedmatches += [newmatch("Misfits Premier", "Vitality.Bee", "Misfits Premier")]
+"""
+addedmatches += [newmatch("G2 Esports", "MAD Lions", "G2 Esports")]
+addedmatches += [newmatch("Team Vitality", "Team BDS", "Team Vitality")]
+addedmatches += [newmatch("SK Gaming", "Fnatic", "Fnatic")]
+addedmatches += [newmatch("Rogue (European Team)", "MAD Lions", "Rogue (European Team)")]
+addedmatches += [newmatch("G2 Esports", "Excel Esports", "G2 Esports")]
+addedmatches += [newmatch("Team Vitality", "Astralis", "Astralis")]
+addedmatches += [newmatch("Team BDS", "Excel Esports", "Team BDS")]
+addedmatches += [newmatch("Misfits Gaming", "MAD Lions", "Misfits Gaming")]
+addedmatches += [newmatch("SK Gaming", "Rogue (European Team)", "SK Gaming")]
+addedmatches += [newmatch("G2 Esports", "Fnatic", "G2 Esports")]
+"""
 print("There are {} matches".format(len(games+addedmatches)))
 
 for g in games+addedmatches:
@@ -83,6 +104,23 @@ for g in games+addedmatches:
 	else:
 		print("unknown winner: {}".format(g.winner), file=sys.stderr)
 	
+if LEAGUE == "LEC" and SEASON == "SUMMER":
+	basepts = {
+		"G2":90,
+		"RGE":70,
+		"FNC":50,
+		"MSF":30,
+		"MAD":20,
+		"VIT":20,
+		"XL":10,
+		"SK":0,
+		"AST":0,
+		"BDS":0
+		}
+	sumpts = [120,90,70,50,30,20,0,0,0]
+else:
+	basepts = {t:0 for t in teams}
+	sumpts = [120,90,70,50,30,20,0,0,0]
 
 """with open("{}-tot.in".format(LEAGUE), "r") as f:
 	n = int(f.readline().strip())
@@ -101,7 +139,7 @@ for g in games+addedmatches:
 """
 
 def init(teams, results):
-	global pos, M, Result, match_import
+	global pos, M, Result
 	pos = {t:dict() for t in teams}
 	M = []
 	for t1 in teams:
@@ -110,29 +148,21 @@ def init(teams, results):
 				for i in range(2-results[t1][t2] - results[t2][t1]):
 					M += [(t1,t2)]
 	Result = [0]*len(M)
-	match_import = {t:[[[0,0,0], [0,0,0]] for i in range(len(M))] for t in teams}
 
-def playoff(p):
-	a,b = p
-	if b<=6:
-		return 2
-	if a<=6:
-		return 1
-	if 6<a:
-		return 0
-	
+
+curR = dict()
 
 def affect(t, p):
-	global pos, Result, match_import, M
+	global pos, Result, M
 	if p not in pos[t]:
 		pos[t][p] = 0
 	pos[t][p] += 1
-	P = playoff(p)
-	for i in range(len(M)):
-		match_import[t][i][Result[i]][P] += 1
+	curR[t] = p
 	
-
-def tiebreaker(teams, results, offset):
+foobar = 0
+poss = False
+def tiebreaker(teams, results, offset, R):
+	global foobar, poss
 	n = len(teams)
 	"""p = (offset+1, offset+n)
 	for k in range(n):
@@ -142,53 +172,55 @@ def tiebreaker(teams, results, offset):
 		pass
 	elif n == 1:
 		t = teams[0]
-		affect(t, (offset+1, offset+1))
-	elif n == 2:
-		t1, t2 = teams
-		if results[t1][t2] > results[t2][t1]:
-			affect(t1, (offset+1, offset+1))
-			affect(t2, (offset+2, offset+2))
-		elif results[t1][t2] < results[t2][t1]:
-			affect(t1, (offset+2, offset+2))
-			affect(t2, (offset+1, offset+1))
-		else:
-			affect(t1, (offset+1, offset+2))
-			affect(t2, (offset+1, offset+2))
+		for l in R:
+			l[offset] = t
 	else:
 		T = teams.copy()
 		W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
 		L = {t1:sum(results[t2][t1] for t2 in teams if t1!=t2) for t1 in teams}
 		T.sort(key=lambda t:-W[t])
-		if LEAGUE == 'LEC' or LEAGUE == "LFL":
-			i = 0
-			while W[T[i]] > L[T[i]]:
-				i += 1
-			j = i
-			while j<n and W[T[j]] == L[T[j]]:
-				j += 1
-			if i != 0:
-				tiebreaker(T[:i], results, offset)
-				tiebreaker(T[i:j], results, offset+i)
-				tiebreaker(T[j:], results, offset+j)
-			else:
-				W = {t1:sum(secondhalf[t1][t2] for t2 in secondhalf[t1] if t1!=t2) for t1 in teams}
-				T.sort(key=lambda t:-W[t])
-				i = 0
-				j = 0
-				while i<n:
-					while j<n and W[T[i]] == W[T[j]]:
-						j += 1
-					p = (offset+i+1, offset+j)
-					for k in range(i,j):
-						affect(T[k], p)
-					i = j
+		i = 0
+		while W[T[i]] > L[T[i]]:
+			i += 1
+		j = i
+		while j<n and W[T[j]] == L[T[j]]:
+			j += 1
+		if i != 0:
+			R = tiebreaker(T[:i], results, offset, R)
+			R = tiebreaker(T[i:j], results, offset+i, R)
+			R = tiebreaker(T[j:], results, offset+j, R)
 		else:
-			print("tie breaker for this league not implemented", file=sys.stderr)
-			exit(0)
+			W = {t1:sum(secondhalf[t1][t2] for t2 in secondhalf[t1] if t1!=t2) for t1 in teams}
+			T.sort(key=lambda t:-W[t])
+			i = 0
+			j = 0
+			while i<n:
+				while j<n and W[T[i]] == W[T[j]]:
+					j += 1
+				
+				oR = R
+				R = []
+				if i+1 != j and offset+i+1<=6:
+					if poss:
+						poss = False
+						foobar += 1
+						print(f'Scénario {foobar} :')
+					print(f'\t{" vs ".join(T[i:j])} pour les places {offset+i+1} à {offset+j}')
+				for ol in oR:
+					for subl in permutations(range(i, j)):
+						l = ol.copy()
+						for k in range(j-i):
+							l[offset+i+k] = T[subl[k]]
+						R += [l]
+				i = j
+	return R
 
 def classements(teams, results):
+	global Rs, poss
+	poss = True
 	n = len(teams)
 	T = teams.copy()
+	R = [[None for i in range(10)]]
 	W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
 	T.sort(key=lambda t:-W[t])
 	i = 0
@@ -197,14 +229,28 @@ def classements(teams, results):
 		while j<n and W[T[i]] == W[T[j]]:
 			j += 1
 		if i+1==j:
-			p = (i+1, j)
-			affect(T[i], p)
+			oR = R
+			R = []
+			for ol in oR:
+				for subl in permutations(range(i, j)):
+					l = ol.copy()
+					for k in range(j-i):
+						l[i+k] = T[subl[k]]
+					R += [l]
 		else:
-			tiebreaker(T[i:j], results, i)
+			R = tiebreaker(T[i:j], results, i, R)
 		i = j
+	for l in R:
+		if l[0] == "XL":
+			for i in range(15):
+				print(M[i][0], M[i][1], secondhalf[M[i][0]][M[i][1]])
+		if tuple(l) not in Rs:
+			Rs[tuple(l)] = 0
+		Rs[tuple(l)] += 1/len(R)
+
 
 nb = 0
-def trouve(Result, M, results, secondhalf, i):
+def trouve(Result, M, results, secondhalf, i, cut=1):
 	global nb, teams
 	if i == len(M):
 		nb += 1
@@ -216,7 +262,10 @@ def trouve(Result, M, results, secondhalf, i):
 		if results[M[i][0]][M[i][1]]+results[M[i][1]][M[i][0]] != 0:
 			secondhalf[M[i][0]][M[i][1]] += 1
 		results[M[i][0]][M[i][1]] += 1
-		trouve(Result, M, results, secondhalf, i+1)
+		if random() < exp(log(1/cut)/len(M)):
+			trouve(Result, M, results, secondhalf, i+1, cut=cut)
+		else:
+			nb += 2**(len(M)-i-1)
 		results[M[i][0]][M[i][1]] -= 1
 		if results[M[i][0]][M[i][1]]+results[M[i][1]][M[i][0]] != 0:
 			secondhalf[M[i][0]][M[i][1]] -= 1
@@ -224,44 +273,42 @@ def trouve(Result, M, results, secondhalf, i):
 		if results[M[i][1]][M[i][0]]+results[M[i][0]][M[i][1]] != 0:
 			secondhalf[M[i][1]][M[i][0]] += 1
 		results[M[i][1]][M[i][0]] += 1
-		trouve(Result, M, results, secondhalf, i+1)
+		if random() < exp(log(1/cut)/len(M)):
+			trouve(Result, M, results, secondhalf, i+1, cut=cut)
+		else:
+			nb += 2**(len(M)-i-1)
 		results[M[i][1]][M[i][0]] -= 1
 		if results[M[i][1]][M[i][0]]+results[M[i][0]][M[i][1]] != 0:
 			secondhalf[M[i][1]][M[i][0]] -= 1
 
 init(teams, results)
-trouve(Result, M, results, secondhalf, 0)
-pprint(pos)
-r = dict()
-for t in pos:
-	r[t] = [0,0,0]
-	for p in pos[t]:
-		r[t][playoff(p)] += pos[t][p]
+Ntot = 2**len(M)
+print("computing the {} scenarios".format(2**len(M)))
+
+trouve(Result, M, results, secondhalf, 0, cut=cut)
+print('')
+
+for R in Rs:
+	qualif = R[:6]
+	totpts = [(basepts[R[i]]+sumpts[i], sumpts[i], R[i]) for i in range(6)]
+	totpts.sort(reverse=True)
+	if totpts[0][2] == "XL":
+		print(totpts)
+	for i in range(6):
+		if totpts[i][0] == totpts[i-1][0] and totpts[i][1] == totpts[i-1][1]:
+			print(f'oof {totpts[i][2]} {totpts[i-1][2]} {totpts[i][0]} {totpts[i][1]}')
+		if (i+1, i+1) not in pos[totpts[i][2]]:
+			pos[totpts[i][2]][(i+1, i+1)] = 0
+		pos[totpts[i][2]][(i+1, i+1)] += Rs[R]
+
 T = teams.copy()
-T.sort(key=lambda t:(-r[t][2], -r[t][1]))
-with open("{}/{}-{}-{}-fullauto.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'w') as f:
+T.sort(key=lambda t:[v[1] for v in sorted([(-pos[t][(i+1,i+1)], i) for i in range(6) if (i+1, i+1) in pos[t]])+[(2**len(M)-sum([pos[t][x] for x in pos[t]]), 6)]])
+with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-fullauto-summer.out', 'w') as f:
 	data = {
 		"pos":{t:[p for p in pos[t]] for t in teams}, 
 		"nb":{t:[pos[t][p] for p in pos[t]] for t in teams},
-		"teams":T
+		"teams":T,
+		"logos":logos,
+		"N":Ntot
 		}
 	json.dump(data, f)
-with open("{}/{}-{}-{}-fullauto-playoff.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'w') as f:
-	print("Team,,Percentage of scenarios in playoff,Percentage of scenarios in a tiebreak for playoff,Percentage of scenarios out of playoff", file=f)
-	for t in T:
-		print("{},=IMAGE(\"{}\"),{},{},{}".format(t, logos[t], r[t][2]/sum(r[t]), r[t][1]/sum(r[t]), r[t][0]/sum(r[t])), file=f)
-with open("{}/{}-{}-{}-fullauto-pos.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'w') as f:
-	print("Team,,Best position,Worst position", file=f)
-	for t in T:
-		print("{},=IMAGE(\"{}\"),{},{}".format(t, logos[t], min(p[0] for p in pos[t]), max(p[1] for p in pos[t])), file=f)
-with open("{}/{}-{}-{}-fullauto-playoff-cond.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'w') as f:
-	print("Team,Team1,Team2,No playoffs with team1 wins,Tiebreaker with team1 wins,Playoffs with team1 wins,No playoffs with team2 wins,Tiebreaker with team2 wins,Playoffs with team2 wins", file=f)
-	for t in teams:
-		for i in range(len(M)):
-			t1, t2 = M[i]
-			k, l = 0, 1
-			if t2 == t:
-				t1, t2 = t2, t1
-				k, l = l, k
-			print("{},{},{},{},{},{},{},{},{}".format(t, t1, t2, *match_import[t][i][k], *match_import[t][i][l]), file=f)
-
