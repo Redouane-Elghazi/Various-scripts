@@ -2,7 +2,7 @@ import json
 import sys
 from math import ceil, floor
 
-LEAGUE = sys.argv[1]
+LEAGUE = sys.argv[1].replace("_", " ")
 YEAR = sys.argv[2]
 SEASON = sys.argv[3]
 

@@ -60,9 +60,6 @@ complete2short = {
 	"Karmine Corp":"KC",
 	"Vitality.Bee":"VITB",
 	"LDLC OL":"LDLC",
-	"Karmine Corp Blue":"KCB",
-	"Gentle Mates":"M8",
-	"Team Du Sud":"TDS",
 	"Astralis":"AST",
 	"Team BDS":"BDS",
 	"SK Gaming":"SK",
@@ -137,11 +134,7 @@ addedmatches += [newmatch("G2 Esports", "Team Vitality", "Team Vitality")]
 addedmatches += [newmatch("SK Gaming", "Team Vitality", "Team Vitality")]
 addedmatches += [newmatch("Team Heretics", "Team Vitality", "Team Heretics")]
 """
-
-addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("SK Gaming", "Karmine Corp", "SK Gaming")]
-
+addedmatches += [newmatch("Team BDS", "Karmine Corp", "Team BDS")]
 print("There are {} matches".format(len(games+addedmatches)))
 
 for g in games+addedmatches:
@@ -267,11 +260,8 @@ def get_SoV(teams, results):
 	
 tie8 = 0
 tiet8 = dict()
-qualif = 0
-tie = 0
-out = 0
-def classements(teams, results, p, offset=0, R=None):
-	global Rs, tie8, qualif, tie, out
+def classements(teams, results, offset=0, R=None):
+	global Rs, tie8
 	terminal = R is None
 	#print(teams, R)
 	if LEAGUE.lower() == "lec":
@@ -287,15 +277,6 @@ def classements(teams, results, p, offset=0, R=None):
 		while i<n:
 			while j<n and ((W[T[i]], SoV[T[i]]) == (W[T[j]], SoV[T[j]]) or (7==i and W[T[7]] == W[T[8]] == W[T[j]]) or (6==i and W[T[6]] == W[T[7]] == W[T[8]] == W[T[j]] and W[T[6]] != W[T[9]])):
 				j += 1
-			if 'KC' in T[i:j]:
-				if j < 8:
-					qualif += p
-				elif i < 8 <= j:
-					tie += p
-				elif 8 <= i:
-					out += p
-				else:
-					print("b2oba")
 			if i <= 7 and 9 <= j:
 				for t in T[i:8]:
 					if t not in tiet8:
@@ -334,7 +315,7 @@ def classements(teams, results, p, offset=0, R=None):
 		for l in R:
 			if tuple(l) not in Rs:
 				Rs[tuple(l)] = 0
-			Rs[tuple(l)] += p/len(R)
+			Rs[tuple(l)] += 1/len(R)
 	else:
 		n = len(teams)
 		T = teams.copy()
@@ -399,17 +380,14 @@ def classements(teams, results, p, offset=0, R=None):
 	#print(teams, R)
 
 nb = 0
-aaa = 0
-def trouve(Result, M, results, i, p, probawin, cut=1):
-	global nb, teams, aaa
+def trouve(Result, M, results, i, cut=1):
+	global nb, teams
 	if i == len(M):
 		nb += 1
-		aaa += p
-		#print(nb, aaa)
 		if nb%10000 == 0:
 			st, nd = estimaT(nb/2**len(M))
 			print("scenario number {}, start {}, estimated end {}".format(nb, st, nd), end='\r')
-		classements(teams, results, p)
+		classements(teams, results)
 		#print(Rs)
 		#exit(0)
 	else:
@@ -417,7 +395,7 @@ def trouve(Result, M, results, i, p, probawin, cut=1):
 		results[M[i][0]][M[i][1]] += 1
 		secondhalf[M[i][0]][M[i][1]] += 1
 		if random() < exp(log(1/cut)/len(M)):
-			trouve(Result, M, results, i+1, p*probawin[M[i][0]][M[i][1]], probawin, cut=cut)
+			trouve(Result, M, results, i+1, cut=cut)
 		else:
 			nb += 2**(len(M)-i-1)
 		results[M[i][0]][M[i][1]] -= 1
@@ -426,7 +404,7 @@ def trouve(Result, M, results, i, p, probawin, cut=1):
 		results[M[i][1]][M[i][0]] += 1
 		secondhalf[M[i][1]][M[i][0]] += 1
 		if random() < exp(log(1/cut)/len(M)):
-			trouve(Result, M, results, i+1, p*probawin[M[i][1]][M[i][0]], probawin, cut=cut)
+			trouve(Result, M, results, i+1, cut=cut)
 		else:
 			nb += 2**(len(M)-i-1)
 		results[M[i][1]][M[i][0]] -= 1
@@ -437,21 +415,7 @@ Ntot = 2**len(M)
 print(len(M))
 print("computing the {} scenarios".format(2**len(M)))
 
-try:
-	with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-probawin.out', 'r') as f:
-		probawin = json.load(f)
-	for t1, t2 in M:
-		probawin[t1][t2] *= 2
-		probawin[t2][t1] *= 2
-except:
-	print("failed to load probabilities")
-	probawin = {t:dict() for t in teams}
-	for t1, t2 in M:
-		probawin[t1][t2] = 1
-		probawin[t2][t1] = 1
-
-trouve(Result, M, results, 0, 1, probawin, cut=cut)
-print(f'{qualif/nb},{tie/nb},{out/nb}')
+trouve(Result, M, results, 0, cut=cut)
 print('')
 print("tie8:", tie8)
 print(tiet8)

@@ -33,6 +33,8 @@ complete2short = {
 	"Karmine Corp":"KC",
 	"Vitality.Bee":"VITB",
 	"LDLC OL":"LDLC",
+	"BK ROG Esports":"BKR",
+	"Aegis (French Team)":"AEG",
 	"Astralis":"AST",
 	"Team BDS":"BDS",
 	"SK Gaming":"SK",
@@ -62,16 +64,21 @@ def newmatch(t1, t2, w):
 		t.sources.leaguepedia = void()
 	res.teams.BLUE.sources.leaguepedia.name = t1
 	res.teams.RED.sources.leaguepedia.name = t2
+	print(t1, t2)
 	if w == t1:
 		res.winner = "BLUE"
 	else:
 		res.winner = "RED"
 	return res
 addedmatches=[]
-interrestingpairs = []
+interrestingpairs = [("SLY", "KC")]#, ("BKR", "KC"), ("SLY", "BKR")]
 #interrestingpairs += [(t1, t2) for t1 in {'XL', 'VIT', 'SK', 'MAD'} for t2 in {'XL', 'VIT', 'SK', 'MAD'} if t1<t2]
 prob2 = {}
 prob = {p:0 for p in interrestingpairs}
+#addedmatches += [newmatch("Karmine Corp", "LDLC OL", "LDLC OL")]
+#addedmatches += [newmatch("Karmine Corp", "Vitality.Bee", "Vitality.Bee")]
+#addedmatches += [newmatch("Solary", "Vitality.Bee", "Vitality.Bee")]
+"""
 addedmatches += [newmatch("Misfits Gaming", "Astralis", "Misfits Gaming")]
 addedmatches += [newmatch("Team Vitality", "Team BDS", "Team Vitality")]
 addedmatches += [newmatch("SK Gaming", "Fnatic", "Fnatic")]
@@ -82,7 +89,7 @@ addedmatches += [newmatch("Team BDS", "Excel Esports", "Team BDS")]
 addedmatches += [newmatch("Misfits Gaming", "MAD Lions", "Misfits Gaming")]
 addedmatches += [newmatch("SK Gaming", "Rogue (European Team)", "SK Gaming")]
 addedmatches += [newmatch("G2 Esports", "Fnatic", "G2 Esports")]
-
+"""
 
 if suff:
 	if int(suff)^1:
@@ -218,13 +225,19 @@ def affect(t, p):
 	for i in range(len(M)):
 		match_import[t][i][Result[i]][P] += 1
 	
-
+acc = 0
 def tiebreaker(teams, results, offset):
+	global acc
 	n = len(teams)
 	"""p = (offset+1, offset+n)
 	for k in range(n):
 		affect(teams[k], p)
 	return"""
+	check = False
+	if set(teams) == {"BDSA", "LDLC"}:
+		check = False#True
+		loc = acc
+		acc += 1
 	if n == 0:
 		pass
 	elif n == 1:
@@ -233,8 +246,16 @@ def tiebreaker(teams, results, offset):
 	else:
 		T = teams.copy()
 		W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
+		if check:
+			print(acc)
+			print(T)
+			print(W)
 		L = {t1:sum(results[t2][t1] for t2 in teams if t1!=t2) for t1 in teams}
 		T.sort(key=lambda t:-W[t])
+		if check:
+			print(acc)
+			print(T)
+			print(W)
 		if LEAGUE == 'LEC' or LEAGUE == "LFL":
 			i = 0
 			while W[T[i]] > L[T[i]]:
@@ -242,12 +263,24 @@ def tiebreaker(teams, results, offset):
 			j = i
 			while j<n and W[T[j]] == L[T[j]]:
 				j += 1
+			if check:
+				print(acc)
+				print(T)
+				print(W)
 			if i != 0:
 				tiebreaker(T[:i], results, offset)
 				tiebreaker(T[i:j], results, offset+i)
 				tiebreaker(T[j:], results, offset+j)
 			else:
+				if check:
+					print(acc)
+					print(T)
+					print(W)
 				W = {t1:sum(secondhalf[t1][t2] for t2 in secondhalf[t1] if t1!=t2) for t1 in teams}
+				if check:
+					print(acc)
+					print(T)
+					print(W)
 				T.sort(key=lambda t:-W[t])
 				i = 0
 				j = 0
@@ -263,6 +296,7 @@ def tiebreaker(teams, results, offset):
 			exit(0)
 
 def classements(teams, results):
+	global foo, bar
 	n = len(teams)
 	T = teams.copy()
 	W = {t1:sum(results[t1][t2] for t2 in teams if t1!=t2) for t1 in teams}
@@ -280,6 +314,8 @@ def classements(teams, results):
 		i = j
 	for t1, t2 in interrestingpairs:
 		prob[(t1, t2)] += playoff2(curR[t1], curR[t2])
+		if playoff2(curR[t1], curR[t2]) != 0:
+			print(curR)
 	for t1 in teams:
 		for t2 in teams:
 			if t1 < t2:
@@ -287,8 +323,13 @@ def classements(teams, results):
 					if (t1, t2) not in prob2:
 						prob2[(t1, t2)] = 0
 					prob2[(t1, t2)] += top2(curR[t1], curR[t2])
+	if curR["LDLC"][1] > 6:
+		#print(curR)
+		bar += [(curR["LDLC"], foo.copy())]
 
 nb = 0
+foo = dict()
+bar = list()
 def trouve(Result, M, results, secondhalf, i, cut=1):
 	global nb, teams
 	if i == len(M):
@@ -301,6 +342,7 @@ def trouve(Result, M, results, secondhalf, i, cut=1):
 		if results[M[i][0]][M[i][1]]+results[M[i][1]][M[i][0]] != 0:
 			secondhalf[M[i][0]][M[i][1]] += 1
 		results[M[i][0]][M[i][1]] += 1
+		foo[M[i]] = M[i][0]
 		if random() < exp(log(1/cut)/len(M)):
 			trouve(Result, M, results, secondhalf, i+1, cut=cut)
 		else:
@@ -312,6 +354,7 @@ def trouve(Result, M, results, secondhalf, i, cut=1):
 		if results[M[i][1]][M[i][0]]+results[M[i][0]][M[i][1]] != 0:
 			secondhalf[M[i][1]][M[i][0]] += 1
 		results[M[i][1]][M[i][0]] += 1
+		foo[M[i]] = M[i][1]
 		if random() < exp(log(1/cut)/len(M)):
 			trouve(Result, M, results, secondhalf, i+1, cut=cut)
 		else:
@@ -321,6 +364,7 @@ def trouve(Result, M, results, secondhalf, i, cut=1):
 			secondhalf[M[i][1]][M[i][0]] -= 1
 
 init(teams, results)
+print(M)
 print("computing the {} scenarios".format(2**len(M)))
 
 trouve(Result, M, results, secondhalf, 0, cut=cut)
@@ -363,3 +407,8 @@ for t1, t2 in interrestingpairs:
 	print("{},{},{}".format(t1, t2, prob[(t1,t2)]/2**len(M)))
 for t1, t2 in prob2:
 	print("{},{},{}".format(t1, t2, prob2[(t1,t2)]/2**len(M)))
+
+l = [match for match in bar[0][1]]
+print(",".join(["rank"]+[m[0]+"-"+m[1] for m in l]))
+for s in bar:
+	print(",".join([str(s[0][0])+"-"+str(s[0][1])]+[s[1][match] for match in l]))

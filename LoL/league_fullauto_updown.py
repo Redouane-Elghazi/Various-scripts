@@ -60,9 +60,6 @@ complete2short = {
 	"Karmine Corp":"KC",
 	"Vitality.Bee":"VITB",
 	"LDLC OL":"LDLC",
-	"Karmine Corp Blue":"KCB",
-	"Gentle Mates":"M8",
-	"Team Du Sud":"TDS",
 	"Astralis":"AST",
 	"Team BDS":"BDS",
 	"SK Gaming":"SK",
@@ -75,9 +72,6 @@ complete2short = {
 	"Fnatic":"FNC",
 	"BK ROG Esports": "BKR",
 	"Aegis (French Team)": "AEG",
-	"Rogue (European Team)": "RGE",
-	"GIANTX": "GX",
-	"MAD Lions KOI": "MDK",
 	}
 	
 complete2short.update({
@@ -106,9 +100,6 @@ addedmatches=[]
 #addedmatches += [newmatch("Joblife", "MS Company", "Joblife")]
 #addedmatches += [newmatch("Joblife", "Team Du Sud", "Joblife")]
 #addedmatches += [newmatch("Joblife", "ViV Esport", "Joblife")]
-#addedmatches += [newmatch("Karmine Corp", "Vitality.Bee", "Vitality.Bee")]
-#addedmatches += [newmatch("Karmine Corp", "Aegis (French Team)", "Aegis (French Team)")]
-#addedmatches += [newmatch("Vitality.Bee", "Solary", "Solary")]
 """
 addedmatches += [newmatch("G2 Esports", "MAD Lions", "G2 Esports")]
 addedmatches += [newmatch("Team Vitality", "Team BDS", "Team Vitality")]
@@ -121,27 +112,6 @@ addedmatches += [newmatch("Team Heretics", "MAD Lions", "Team Heretics")]
 addedmatches += [newmatch("SK Gaming", "KOI (Spanish Team)", "SK Gaming")]
 addedmatches += [newmatch("MAD Lions", "Fnatic", "MAD Lions")]
 """
-"""addedmatches += [newmatch("Team Heretics", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("SK Gaming", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "MAD Lions KOI", "Rogue (European Team)")]
-addedmatches += [newmatch("Rogue (European Team)", "Team BDS", "Rogue (European Team)")]
-addedmatches += [newmatch("Rogue (European Team)", "GIANTX", "Rogue (European Team)")]
-addedmatches += [newmatch("Fnatic", "GIANTX", "GIANTX")]
-addedmatches += [newmatch("G2 Esports", "GIANTX", "GIANTX")]
-addedmatches += [newmatch("MAD Lions KOI", "GIANTX", "MAD Lions KOI")]
-addedmatches += [newmatch("MAD Lions KOI", "Fnatic", "Fnatic")]
-addedmatches += [newmatch("MAD Lions KOI", "Team Vitality", "MAD Lions KOI")]
-addedmatches += [newmatch("G2 Esports", "Team Vitality", "Team Vitality")]
-addedmatches += [newmatch("SK Gaming", "Team Vitality", "Team Vitality")]
-addedmatches += [newmatch("Team Heretics", "Team Vitality", "Team Heretics")]
-"""
-
-addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("SK Gaming", "Karmine Corp", "SK Gaming")]
-
 print("There are {} matches".format(len(games+addedmatches)))
 
 for g in games+addedmatches:
@@ -169,7 +139,7 @@ for g in games+addedmatches:
 	else:
 		print("unknown winner: {}".format(g.winner), file=sys.stderr)
 
-if LEAGUE.lower() == "lec" and SEASON.lower() == "summer":
+if LEAGUE == "LEC" and SEASON == "SUMMER":
 	basepts = {
 		"G2":90,
 		"RGE":70,
@@ -210,7 +180,7 @@ def init(teams, results):
 	for t1 in teams:
 		for t2 in teams:
 			if t1 < t2:
-				if LEAGUE.lower() == "lec":
+				if LEAGUE == "LEC" or LEAGUE == "lec":
 					for i in range(1-results[t1][t2] - results[t2][t1]):
 						M += [(t1,t2)]
 				else:
@@ -267,14 +237,11 @@ def get_SoV(teams, results):
 	
 tie8 = 0
 tiet8 = dict()
-qualif = 0
-tie = 0
-out = 0
-def classements(teams, results, p, offset=0, R=None):
-	global Rs, tie8, qualif, tie, out
+def classements(teams, results, offset=0, R=None):
+	global Rs, tie8
 	terminal = R is None
 	#print(teams, R)
-	if LEAGUE.lower() == "lec":
+	if LEAGUE == "LEC":
 		n = len(teams)
 		T = teams.copy()
 		if R is None:
@@ -285,17 +252,8 @@ def classements(teams, results, p, offset=0, R=None):
 		i = 0
 		j = 0
 		while i<n:
-			while j<n and ((W[T[i]], SoV[T[i]]) == (W[T[j]], SoV[T[j]]) or (7==i and W[T[7]] == W[T[8]] == W[T[j]]) or (6==i and W[T[6]] == W[T[7]] == W[T[8]] == W[T[j]] and W[T[6]] != W[T[9]])):
+			while j<n and ((W[T[i]], SoV[T[i]]) == (W[T[j]], SoV[T[j]]) or (i <= 7 <= j and W[T[i]] == W[T[j]])):
 				j += 1
-			if 'KC' in T[i:j]:
-				if j < 8:
-					qualif += p
-				elif i < 8 <= j:
-					tie += p
-				elif 8 <= i:
-					out += p
-				else:
-					print("b2oba")
 			if i <= 7 and 9 <= j:
 				for t in T[i:8]:
 					if t not in tiet8:
@@ -334,7 +292,7 @@ def classements(teams, results, p, offset=0, R=None):
 		for l in R:
 			if tuple(l) not in Rs:
 				Rs[tuple(l)] = 0
-			Rs[tuple(l)] += p/len(R)
+			Rs[tuple(l)] += 1/len(R)
 	else:
 		n = len(teams)
 		T = teams.copy()
@@ -385,31 +343,58 @@ def classements(teams, results, p, offset=0, R=None):
 				classements(T[i:j], results, offset+i, R)
 				i = j
 		if terminal:
-			#nb = 0
+			pts = {
+				"IZI":0,
+				"GW":45,
+				"GO":135,
+				"BDSA":75,
+				"SLY":60,
+				"KC":12,
+				"VITB":30,
+				"LDLC":180,
+				"BKR":18,
+				"AEG":105
+			}
+			mpts = [140, 140, 80, 60, 60, 60, 40, 24, 16, 0]
+			Mpts = [240, 240, 240, 240, 240, 240, 40, 24, 16, 0]
 			for l in R:
-			#	if W["BKR"] == W["SLY"] and l.index("BKR") < l.index("SLY"):
-			#		nb += 1
-				if tuple(l) not in Rs:
-					Rs[tuple(l)] = 0
-				Rs[tuple(l)] += 1/len(R)
-			#if 2*nb > len(R) and len([t for t in teams if W[t] == W["BKR"]]) == 2:
-			#	print("")
-			#	pprint([t for t in teams if W[t] == W["BKR"]])
-			#	pprint(secondhalf)
+				mini = pts.copy()
+				maxi = pts.copy()
+				for i in range(10):
+					mini[l[i]] += mpts[i]
+					maxi[l[i]] += Mpts[i]
+				cand = []
+				l2 = l.copy()
+				l2.sort(key=lambda t:maxi[t])
+				threshold = max(maxi[l2[0]], maxi[l2[1]])
+				for t in l2:
+					if mini[t] <= threshold:
+						cand += [t]
+						#threshold = max(threshold, maxi[t])
+				cand.sort()
+				if len(cand) > 2:
+					cand += ["(playoffs)"]
+				cand = " ".join(cand)
+				if cand not in Rs:
+					Rs[cand] = 0
+				Rs[cand] += 1/len(R)
+			if cand == "BDSA BKR IZI KC VITB (playoffs)":
+				print("")
+				print(mini)
+				print(maxi)
+				print(l2)
+				print(cand)
 	#print(teams, R)
 
 nb = 0
-aaa = 0
-def trouve(Result, M, results, i, p, probawin, cut=1):
-	global nb, teams, aaa
+def trouve(Result, M, results, i, cut=1):
+	global nb, teams
 	if i == len(M):
 		nb += 1
-		aaa += p
-		#print(nb, aaa)
 		if nb%10000 == 0:
 			st, nd = estimaT(nb/2**len(M))
 			print("scenario number {}, start {}, estimated end {}".format(nb, st, nd), end='\r')
-		classements(teams, results, p)
+		classements(teams, results)
 		#print(Rs)
 		#exit(0)
 	else:
@@ -417,7 +402,7 @@ def trouve(Result, M, results, i, p, probawin, cut=1):
 		results[M[i][0]][M[i][1]] += 1
 		secondhalf[M[i][0]][M[i][1]] += 1
 		if random() < exp(log(1/cut)/len(M)):
-			trouve(Result, M, results, i+1, p*probawin[M[i][0]][M[i][1]], probawin, cut=cut)
+			trouve(Result, M, results, i+1, cut=cut)
 		else:
 			nb += 2**(len(M)-i-1)
 		results[M[i][0]][M[i][1]] -= 1
@@ -426,7 +411,7 @@ def trouve(Result, M, results, i, p, probawin, cut=1):
 		results[M[i][1]][M[i][0]] += 1
 		secondhalf[M[i][1]][M[i][0]] += 1
 		if random() < exp(log(1/cut)/len(M)):
-			trouve(Result, M, results, i+1, p*probawin[M[i][1]][M[i][0]], probawin, cut=cut)
+			trouve(Result, M, results, i+1, cut=cut)
 		else:
 			nb += 2**(len(M)-i-1)
 		results[M[i][1]][M[i][0]] -= 1
@@ -434,41 +419,17 @@ def trouve(Result, M, results, i, p, probawin, cut=1):
 
 init(teams, results)
 Ntot = 2**len(M)
-print(len(M))
 print("computing the {} scenarios".format(2**len(M)))
 
-try:
-	with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-probawin.out', 'r') as f:
-		probawin = json.load(f)
-	for t1, t2 in M:
-		probawin[t1][t2] *= 2
-		probawin[t2][t1] *= 2
-except:
-	print("failed to load probabilities")
-	probawin = {t:dict() for t in teams}
-	for t1, t2 in M:
-		probawin[t1][t2] = 1
-		probawin[t2][t1] = 1
-
-trouve(Result, M, results, 0, 1, probawin, cut=cut)
-print(f'{qualif/nb},{tie/nb},{out/nb}')
+trouve(Result, M, results, 0, cut=cut)
 print('')
-print("tie8:", tie8)
-print(tiet8)
 
-for R in Rs:
-	for i in range(len(R)):
-		if (i+1, i+1) not in pos[R[i]]:
-			pos[R[i]][(i+1, i+1)] = 0
-		pos[R[i]][(i+1, i+1)] += Rs[R]
-
-T = teams.copy()
-T.sort(key=lambda t:[v[1] for v in sorted([(-pos[t][(i+1,i+1)], i) for i in range(10) if (i+1, i+1) in pos[t]])+[(2**len(M)-sum([pos[t][x] for x in pos[t]]), 8)]])
-with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-fullauto-summer.out', 'w') as f:
+ls = sorted(list(Rs), key=lambda l:-Rs[l])
+for l in ls:
+	print(l, ",", Rs[l]/Ntot)
+with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-fullauto-updown.out', 'w') as f:
 	data = {
-		"pos":{t:[p for p in pos[t]] for t in teams}, 
-		"nb":{t:[pos[t][p] for p in pos[t]] for t in teams},
-		"teams":T,
+		"cands":Rs,
 		"logos":logos,
 		"N":Ntot
 		}
