@@ -2,9 +2,9 @@ import json
 import sys
 from math import ceil, floor
 
-LEAGUE = sys.argv[1].replace('_', ' ')
-YEAR = sys.argv[2]
-SEASON = sys.argv[3]
+LEAGUE = sys.argv[1].replace("_", " ").strip()
+YEAR = sys.argv[2].strip()
+SEASON = sys.argv[3].strip()
 
 with open("{}/{}-{}-{}-fullauto-summer.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'r') as f:
 	data = json.load(f)
@@ -20,8 +20,8 @@ for t in teams:
 		for k in range(a, b):
 			poss[t][k-1] += pos[t][p]/(b-a)
 
-print(sum(poss["KC"][i]/N for i in range(8,10)))
-print(sum(poss["KC"][i]/N for i in range(8)))
+#print(sum(poss["KC"][i]/N for i in range(8,10)))
+#print(sum(poss["KC"][i]/N for i in range(8)))
 
 with open("{}/{}-{}-{}-fullauto-allpos-summer.out".format(LEAGUE, LEAGUE, SEASON, YEAR), 'w') as f:
 	print("Rank,"+','.join(teams), file=f)

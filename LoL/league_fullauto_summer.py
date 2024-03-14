@@ -6,16 +6,18 @@ from math import log, exp
 from itertools import permutations
 import datetime as dt
 
+from teams import complete2short
+
 #LEAGUES = LFL, LEC, LFL_Division_2
-LEAGUE = sys.argv[1].replace("_", " ")
-YEAR = sys.argv[2]
-SEASON = sys.argv[3]
+LEAGUE = sys.argv[1].replace("_", " ").strip()
+YEAR = sys.argv[2].strip()
+SEASON = sys.argv[3].strip()
 if len(sys.argv)>4:
 	cut = int(sys.argv[4])
 else:
 	cut = 1
 
-def newmatch(t1, t2, w):
+def newmatch(t1, t2, w, gis=0):
 	void = lambda :(lambda :())
 	res = void()
 	res.teams = void()
@@ -26,6 +28,7 @@ def newmatch(t1, t2, w):
 		t.sources.leaguepedia = void()
 	res.teams.BLUE.sources.leaguepedia.name = t1
 	res.teams.RED.sources.leaguepedia.name = t2
+	res.gameInSeries = gis
 	if w == t1:
 		res.winner = "BLUE"
 	else:
@@ -46,55 +49,9 @@ def estimaT(adv):
 	return (estimaT.start.strftime("%d-%m %H:%M:%S"), end.strftime("%d-%m %H:%M:%S"))
 estimaT.start = None
 
-complete2short = {
-	"Izi Dream": "IZI",
-	"Team MCES": "MCES",
-	"Team Oplon":"OPL",
-	"Mirage Elyandra":"ME",
-	"GameWard":"GW",
-	"GamersOrigin":"GO",
-	"Team GO":"GO",
-	"Team BDS Academy":"BDSA",
-	"Solary":"SLY",
-	"Misfits Premier":"MSFP",
-	"Karmine Corp":"KC",
-	"Vitality.Bee":"VITB",
-	"LDLC OL":"LDLC",
-	"Karmine Corp Blue":"KCB",
-	"Gentle Mates":"M8",
-	"Team Du Sud":"TDS",
-	"Astralis":"AST",
-	"Team BDS":"BDS",
-	"SK Gaming":"SK",
-	"MAD Lions":"MAD",
-	"Team Vitality":"VIT",
-	"G2 Esports":"G2",
-	"Excel Esports":"XL",
-	"KOI (Spanish Team)":"KOI",
-	"Team Heretics":"TH",
-	"Fnatic":"FNC",
-	"BK ROG Esports": "BKR",
-	"Aegis (French Team)": "AEG",
-	"Rogue (European Team)": "RGE",
-	"GIANTX": "GX",
-	"MAD Lions KOI": "MDK",
-	}
-	
-complete2short.update({
-	"Akroma": "AKR",
-	"Atletec": "ATL",
-	"Joblife": "JL",
-	"Klanik Esport": "KE",
-	"Lille Esport": "LiL",
-	"MHSC Esport": "MHSC",
-	"MS Company": "MS",
-	"Project Conquerors": "PCS",
-	"Team Du Sud": "TDS",
-	"ViV Esport": "ViV"
-	})
-
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-logos.out', 'r') as f:
 	fulllogos = json.load(f)
+	
 n = 0
 teams = []
 results = dict()
@@ -102,7 +59,16 @@ secondhalf = dict()
 logos = dict()
 Rs = dict()
 addedmatches=[]
-#addedmatches += [newmatch("Joblife", "Atletec", "Joblife")]
+"""
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "T1 Esports Academy", 1)]
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "Hanwha Life Esports Challengers", 2)]
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "Hanwha Life Esports Challengers", 3)]
+addedmatches += [newmatch("BK ROG Esports", "GameWard", "BK ROG Esports")]
+addedmatches += [newmatch("Vitality.Bee", "Team GO", "Team GO")]
+addedmatches += [newmatch("Team BDS Academy", "Gentle Mates", "Vitality.Bee")]
+addedmatches += [newmatch("Aegis (French Team)", "Karmine Corp Blue", "Karmine Corp Blue")]
+addedmatches += [newmatch("Solary", "Team Du Sud", "Team Du Sud")]
+"""
 #addedmatches += [newmatch("Joblife", "MS Company", "Joblife")]
 #addedmatches += [newmatch("Joblife", "Team Du Sud", "Joblife")]
 #addedmatches += [newmatch("Joblife", "ViV Esport", "Joblife")]
@@ -110,39 +76,22 @@ addedmatches=[]
 #addedmatches += [newmatch("Karmine Corp", "Aegis (French Team)", "Aegis (French Team)")]
 #addedmatches += [newmatch("Vitality.Bee", "Solary", "Solary")]
 """
-addedmatches += [newmatch("G2 Esports", "MAD Lions", "G2 Esports")]
-addedmatches += [newmatch("Team Vitality", "Team BDS", "Team Vitality")]
-addedmatches += [newmatch("SK Gaming", "Fnatic", "Fnatic")]
-addedmatches += [newmatch("KOI (Spanish Team)", "MAD Lions", "KOI (Spanish Team)")]
-addedmatches += [newmatch("G2 Esports", "Team Heretics", "G2 Esports")]
-addedmatches += [newmatch("Team Vitality", "G2 Esports", "G2 Esports")]
-addedmatches += [newmatch("Team BDS", "MAD Lions", "Team BDS")]
-addedmatches += [newmatch("Team Heretics", "MAD Lions", "Team Heretics")]
-addedmatches += [newmatch("SK Gaming", "KOI (Spanish Team)", "SK Gaming")]
-addedmatches += [newmatch("MAD Lions", "Fnatic", "MAD Lions")]
-"""
-"""addedmatches += [newmatch("Team Heretics", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("SK Gaming", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "MAD Lions KOI", "Rogue (European Team)")]
-addedmatches += [newmatch("Rogue (European Team)", "Team BDS", "Rogue (European Team)")]
-addedmatches += [newmatch("Rogue (European Team)", "GIANTX", "Rogue (European Team)")]
-addedmatches += [newmatch("Fnatic", "GIANTX", "GIANTX")]
-addedmatches += [newmatch("G2 Esports", "GIANTX", "GIANTX")]
 addedmatches += [newmatch("MAD Lions KOI", "GIANTX", "MAD Lions KOI")]
 addedmatches += [newmatch("MAD Lions KOI", "Fnatic", "Fnatic")]
 addedmatches += [newmatch("MAD Lions KOI", "Team Vitality", "MAD Lions KOI")]
 addedmatches += [newmatch("G2 Esports", "Team Vitality", "Team Vitality")]
 addedmatches += [newmatch("SK Gaming", "Team Vitality", "Team Vitality")]
 addedmatches += [newmatch("Team Heretics", "Team Vitality", "Team Heretics")]
-"""
+
 
 addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
 addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
 addedmatches += [newmatch("SK Gaming", "Karmine Corp", "SK Gaming")]
+"""
 
 print("There are {} matches".format(len(games+addedmatches)))
+
+curt1, curt2, curscore1, curscore2, gis = (None, None, None, None, None)
 
 for g in games+addedmatches:
 	for t in [g.teams.BLUE, g.teams.RED]:
@@ -158,16 +107,39 @@ for g in games+addedmatches:
 			logos[name] = fulllogos[t.sources.leaguepedia.name]
 	blue = complete2short[g.teams.BLUE.sources.leaguepedia.name]
 	red = complete2short[g.teams.RED.sources.leaguepedia.name]
+	if red == curt1 and blue == curt2:
+		curt1, curt2, curscore1, curscore2 = curt2, curt1, curscore2, curscore1
+	if blue != curt1 or red != curt2 or g.gameInSeries != gis+1:
+		if curt1 is not None:
+			if curscore1>curscore2:
+				results[curt1][curt2] += 1
+				if results[curt1][curt2] + results[curt2][curt1] == 2:
+					secondhalf[curt1][curt2] += 1
+			elif curscore2>curscore1:
+				results[curt2][curt1] += 1
+				if results[curt1][curt2] + results[curt2][curt1] == 2:
+					secondhalf[curt2][curt1] += 1
+			else:
+				print("unknown winner: {} vs {}".format(curt1, curt2), file=sys.stderr)
+		curt1, curt2, curscore1, curscore2, gis = (blue, red, 0, 0, 0)
+	gis = g.gameInSeries
 	if g.winner == 'RED':
-		results[red][blue] += 1
-		if results[blue][red] + results[red][blue] == 2:
-			secondhalf[red][blue] += 1
+		curscore2 += 1
 	elif g.winner == 'BLUE':
-		results[blue][red] += 1
-		if results[blue][red] + results[red][blue] == 2:
-			secondhalf[blue][red] += 1
+		curscore1 += 1
 	else:
 		print("unknown winner: {}".format(g.winner), file=sys.stderr)
+if curt1 is not None:
+	if curscore1>curscore2:
+		results[curt1][curt2] += 1
+		if results[curt1][curt2] + results[curt2][curt1] == 2:
+			secondhalf[curt1][curt2] += 1
+	elif curscore2>curscore1:
+		results[curt2][curt1] += 1
+		if results[curt1][curt2] + results[curt2][curt1] == 2:
+			secondhalf[curt2][curt1] += 1
+	else:
+		print("unknown winner: {} vs {}".format(curt1, curt2), file=sys.stderr)
 
 if LEAGUE.lower() == "lec" and SEASON.lower() == "summer":
 	basepts = {
@@ -211,10 +183,10 @@ def init(teams, results):
 		for t2 in teams:
 			if t1 < t2:
 				if LEAGUE.lower() == "lec":
-					for i in range(1-results[t1][t2] - results[t2][t1]):
+					for i in range(1-round(results[t1][t2] + results[t2][t1])):
 						M += [(t1,t2)]
 				else:
-					for i in range(2-results[t1][t2] - results[t2][t1]):
+					for i in range(2-round(results[t1][t2] + results[t2][t1])):
 						M += [(t1,t2)]
 	Result = [0]*len(M)
 	print(M)
@@ -376,13 +348,13 @@ def classements(teams, results, p, offset=0, R=None):
 				while i<n:
 					while j<n and W[T[i]] == W[T[j]]:
 						j += 1
-					classements(T[i:j], results, offset+i, R)
+					classements(T[i:j], results, p, offset+i, R)
 					i = j
 		else:
 			while i<n:
 				while j<n and W[T[i]] == W[T[j]]:
 					j += 1
-				classements(T[i:j], results, offset+i, R)
+				classements(T[i:j], results, p, offset+i, R)
 				i = j
 		if terminal:
 			#nb = 0
@@ -391,7 +363,7 @@ def classements(teams, results, p, offset=0, R=None):
 			#		nb += 1
 				if tuple(l) not in Rs:
 					Rs[tuple(l)] = 0
-				Rs[tuple(l)] += 1/len(R)
+				Rs[tuple(l)] += p/len(R)
 			#if 2*nb > len(R) and len([t for t in teams if W[t] == W["BKR"]]) == 2:
 			#	print("")
 			#	pprint([t for t in teams if W[t] == W["BKR"]])
@@ -463,7 +435,10 @@ for R in Rs:
 		pos[R[i]][(i+1, i+1)] += Rs[R]
 
 T = teams.copy()
-T.sort(key=lambda t:[v[1] for v in sorted([(-pos[t][(i+1,i+1)], i) for i in range(10) if (i+1, i+1) in pos[t]])+[(2**len(M)-sum([pos[t][x] for x in pos[t]]), 8)]])
+if LEAGUE.lower() == "lec":
+	T.sort(key=lambda t:[v[1] for v in sorted([(-pos[t][(i+1,i+1)], i) for i in range(10) if (i+1, i+1) in pos[t]])+[(2**len(M)-sum([pos[t][x] for x in pos[t]]), 8)]])
+else:
+	T.sort(key=lambda t:[v[1] for v in sorted([(-pos[t][(i+1,i+1)], i) for i in range(10) if (i+1, i+1) in pos[t]])+[(2**len(M)-sum([pos[t][x] for x in pos[t]]), 6)]])
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-fullauto-summer.out', 'w') as f:
 	data = {
 		"pos":{t:[p for p in pos[t]] for t in teams}, 

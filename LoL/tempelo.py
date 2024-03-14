@@ -6,16 +6,14 @@ from math import log, exp
 from itertools import permutations
 import datetime as dt
 
-#LEAGUES = LFL, LEC, LFL_Division_2
-LEAGUE = sys.argv[1].replace("_", " ")
-YEAR = sys.argv[2]
-SEASON = sys.argv[3]
-if len(sys.argv)>4:
-	cut = int(sys.argv[4])
-else:
-	cut = 1
+from teams import complete2short
 
-def newmatch(t1, t2, w):
+#LEAGUES = LFL, LEC, LFL_Division_2
+LEAGUE = sys.argv[1].replace("_", " ").strip()
+YEAR = sys.argv[2].strip()
+SEASON = sys.argv[3].strip()
+
+def newmatch(t1, t2, w, gis=0):
 	void = lambda :(lambda :())
 	res = void()
 	res.teams = void()
@@ -26,6 +24,7 @@ def newmatch(t1, t2, w):
 		t.sources.leaguepedia = void()
 	res.teams.BLUE.sources.leaguepedia.name = t1
 	res.teams.RED.sources.leaguepedia.name = t2
+	res.gameInSeries = gis
 	if w == t1:
 		res.winner = "BLUE"
 	else:
@@ -45,41 +44,6 @@ def estimaT(adv):
 	end = estimaT.start + (cur-estimaT.start)*(1-estimaT.sadv)/(adv-estimaT.sadv)
 	return (estimaT.start.strftime("%d-%m %H:%M:%S"), end.strftime("%d-%m %H:%M:%S"))
 estimaT.start = None
-
-complete2short = {
-	"Izi Dream": "IZI",
-	"Team MCES": "MCES",
-	"Team Oplon":"OPL",
-	"Mirage Elyandra":"ME",
-	"GameWard":"GW",
-	"GamersOrigin":"GO",
-	"Team GO":"GO",
-	"Team BDS Academy":"BDSA",
-	"Solary":"SLY",
-	"Misfits Premier":"MSFP",
-	"Karmine Corp":"KC",
-	"Vitality.Bee":"VITB",
-	"LDLC OL":"LDLC",
-	"Karmine Corp Blue":"KCB",
-	"Gentle Mates":"M8",
-	"Team Du Sud":"TDS",
-	"Astralis":"AST",
-	"Team BDS":"BDS",
-	"SK Gaming":"SK",
-	"MAD Lions":"MAD",
-	"Team Vitality":"VIT",
-	"G2 Esports":"G2",
-	"Excel Esports":"XL",
-	"KOI (Spanish Team)":"KOI",
-	"Team Heretics":"TH",
-	"Fnatic":"FNC",
-	"BK ROG Esports": "BKR",
-	"Aegis (French Team)": "AEG",
-	"Rogue (European Team)": "RGE",
-	"GIANTX": "GX",
-	"MAD Lions KOI": "MDK",
-	}
-	
 	
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-logos.out', 'r') as f:
 	fulllogos = json.load(f)
@@ -91,6 +55,17 @@ secondhalf = dict()
 logos = dict()
 Rs = dict()
 addedmatches=[]
+"""
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "T1 Esports Academy", 1)]
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "Hanwha Life Esports Challengers", 2)]
+addedmatches += [newmatch("T1 Esports Academy", "Hanwha Life Esports Challengers", "Hanwha Life Esports Challengers", 3)]
+
+addedmatches += [newmatch("BK ROG Esports", "GameWard", "BK ROG Esports")]
+addedmatches += [newmatch("Vitality.Bee", "Team GO", "Team GO")]
+addedmatches += [newmatch("Team BDS Academy", "Gentle Mates", "Vitality.Bee")]
+addedmatches += [newmatch("Aegis (French Team)", "Karmine Corp Blue", "Karmine Corp Blue")]
+addedmatches += [newmatch("Solary", "Team Du Sud", "Team Du Sud")]
+"""
 #addedmatches += [newmatch("Joblife", "Atletec", "Joblife")]
 #addedmatches += [newmatch("Joblife", "MS Company", "Joblife")]
 #addedmatches += [newmatch("Joblife", "Team Du Sud", "Joblife")]
@@ -117,6 +92,7 @@ addedmatches += [newmatch("MAD Lions", "Fnatic", "MAD Lions")]
 #addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
 print("There are {} matches".format(len(games+addedmatches)))
 
+curt1, curt2, curscore1, curscore2, gis = (None, None, None, None, None)
 for g in games+addedmatches:
 	for t in [g.teams.BLUE, g.teams.RED]:
 		name = complete2short[t.sources.leaguepedia.name]
@@ -125,33 +101,39 @@ for g in games+addedmatches:
 			for t1 in teams:
 				results[t1][name] = 0
 				secondhalf[t1][name] = 0
+			teams += [name]
 			results[name] = {t1:0 for t1 in teams}
 			secondhalf[name] = {t1:0 for t1 in teams}
-			teams += [name]
 			logos[name] = fulllogos[t.sources.leaguepedia.name]
 	blue = complete2short[g.teams.BLUE.sources.leaguepedia.name]
 	red = complete2short[g.teams.RED.sources.leaguepedia.name]
+	if red == curt1 and blue == curt2:
+		curt1, curt2, curscore1, curscore2 = curt2, curt1, curscore2, curscore1
+	if blue != curt1 or red != curt2 or g.gameInSeries != gis+1:
+		if curt1 is not None:
+			if "KDF.C" in (curt1, curt2):
+				print(curt1, curt2, curscore1, curscore2, blue, red)
+			results[curt1][curt2] += curscore1/(curscore1+curscore2)
+			results[curt2][curt1] += curscore2/(curscore1+curscore2)
+		curt1, curt2, curscore1, curscore2, gis = (blue, red, 0, 0, 0)
+	gis = g.gameInSeries
 	if g.winner == 'RED':
-		results[red][blue] += 1
-		if results[blue][red] + results[red][blue] == 2:
-			secondhalf[red][blue] += 1
+		curscore2 += 1
 	elif g.winner == 'BLUE':
-		results[blue][red] += 1
-		if results[blue][red] + results[red][blue] == 2:
-			secondhalf[blue][red] += 1
+		curscore1 += 1
 	else:
 		print("unknown winner: {}".format(g.winner), file=sys.stderr)
+if curt1 is not None:
+	results[curt1][curt2] += curscore1/(curscore1+curscore2)
+	results[curt2][curt1] += curscore2/(curscore1+curscore2)
 
-for t1 in teams:
-	for t2 in teams:
-		if t2 not in results[t1]:
-			results[t1][t2] = 0
 
 """_____________________start______________________"""
 
-def f(X, w):
+def f(X, nb_matches, w):
 	def g(x):
-		return sum(1/(1+10**(g.X[t]-x)) for t in g.X) - g.w
+		return sum(g.nb_matches[t]/(1+10**(g.X[t]-x)) for t in g.X) - g.w
+	g.nb_matches = nb_matches.copy()
 	g.X = X.copy()
 	g.w = w
 	return g
@@ -190,20 +172,21 @@ def find_elo(teams, results): ### ajouter le nombre de matchs (pour la LFL)
 				unbounded_pos += [t]
 				teams.remove(t)
 				break
-	
+
+	nb_matches = {t1:{t2:results[t1][t2]+results[t2][t1] for t2 in teams} for t1 in teams}
 	n = len(teams)
 	X = {t:0 for t in teams}
 	W = {t:sum([results[t][t1] for t1 in teams]) for t in teams}
 	print(W)
-	err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, W[t])(X[t])) for t in teams)
+	err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t])(X[t])) for t in teams)
 	print(f'err={err}')
 	#return
 	for _ in range(1000):
 		for i in range(1, n):
 			t = teams[i]
-			X[t] = dicho_incr(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, W[t]))
+			X[t] = dicho_incr(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t]))
 		print(f'iteration n°{_+1}', end=" ")
-		err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, W[t])(X[t])) for t in teams)
+		err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t])(X[t])) for t in teams)
 		print(f'err={err}')
 	return X, unbounded_pos, unbounded_neg
 
@@ -220,42 +203,54 @@ pelo = {t:((elo[t]-avg)*diff)+targ for t in elo}
 pprint(pelo)
 
 M = []
+tt = 0
 for t1 in teams:
 	for t2 in teams:
 		if t1 < t2:
 			if LEAGUE.lower() == "lec":
-				for i in range(1-results[t1][t2] - results[t2][t1]):
+				for i in range(1-round(results[t1][t2] + results[t2][t1])):
 					M += [(t1,t2)]
 			else:
-				for i in range(2-results[t1][t2] - results[t2][t1]):
+				print(t1, t2, 2-round(results[t1][t2] + results[t2][t1]))
+				tt += 2-round(results[t1][t2] + results[t2][t1])
+				for i in range(2-round(results[t1][t2] + results[t2][t1])):
 					M += [(t1,t2)]
+print(tt, len(M))
 
 probawin = {t:dict() for t in teams}
 for t1, t2 in M:
 	if t1 in ub_pos and t2 in ub_pos:
-		print(f'passed {t1}-{t2}')
+		print(f'{t1},,skipped,skipped,,{t2}')
+		print(f'{t2},,skipped,skipped,,{t1}')
 		pass
 	elif t1 in ub_pos:
 		probawin[t1][t2] = 1
 		probawin[t2][t1] = 0
 		print(f'{t1},,1,0,,{t2}')
+		print(f'{t2},,0,1,,{t1}')
 	elif t2 in ub_pos:
 		probawin[t1][t2] = 0
 		probawin[t2][t1] = 1
 		print(f'{t1},,0,1,,{t2}')
+		print(f'{t2},,1,0,,{t1}')
 	elif t1 in ub_neg and t2 in ub_neg:
-		print(f'passed {t1}-{t2}')
+		print(f'{t1},,skipped,skipped,,{t2}')
+		print(f'{t2},,skipped,skipped,,{t1}')
 	elif t1 in ub_neg:
 		probawin[t1][t2] = 0
 		probawin[t2][t1] = 1
 		print(f'{t1},,0,1,,{t2}')
+		print(f'{t2},,1,0,,{t1}')
 	elif t2 in ub_neg:
 		probawin[t1][t2] = 1
 		probawin[t2][t1] = 0
 		print(f'{t1},,1,0,,{t2}')
+		print(f'{t2},,0,1,,{t1}')
 	else:
 		probawin[t1][t2] = 1/(1+10**(elo[t2]-elo[t1]))
 		probawin[t2][t1] = 1/(1+10**(elo[t1]-elo[t2]))
-		print(f'{t1},,{1/(1+10**(elo[t2]-elo[t1]))},{1/(1+10**(elo[t1]-elo[t2]))},,{t2}')
+		print(f'{t1},,{1/(1+10**(elo[t2]-elo[t1]))},vs,{1/(1+10**(elo[t1]-elo[t2]))},,{t2}')
+		print(f'{t2},,{1/(1+10**(elo[t1]-elo[t2]))},vs,{1/(1+10**(elo[t2]-elo[t1]))},,{t1}')
+
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-probawin.out', 'w') as f:
 	json.dump(probawin, f)
