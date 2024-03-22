@@ -66,15 +66,16 @@ addedmatches += [newmatch("Team BDS Academy", "Gentle Mates", "Vitality.Bee")]
 addedmatches += [newmatch("Aegis (French Team)", "Karmine Corp Blue", "Karmine Corp Blue")]
 addedmatches += [newmatch("Solary", "Team Du Sud", "Team Du Sud")]
 """
-#addedmatches += [newmatch("Joblife", "Atletec", "Joblife")]
+#addedmatches += [newmatch("Zerance", "Akroma", "Zerance")]
+#addedmatches += [newmatch("Esprit Shōnen", "Joblife", "Esprit Shōnen")]
 #addedmatches += [newmatch("Joblife", "MS Company", "Joblife")]
 #addedmatches += [newmatch("Joblife", "Team Du Sud", "Joblife")]
 #addedmatches += [newmatch("Joblife", "ViV Esport", "Joblife")]
 #addedmatches += [newmatch("Karmine Corp", "Vitality.Bee", "Vitality.Bee")]
 #addedmatches += [newmatch("Karmine Corp", "Aegis (French Team)", "Aegis (French Team)")]
 #addedmatches += [newmatch("Vitality.Bee", "Solary", "Solary")]
+
 """
-addedmatches += [newmatch("G2 Esports", "MAD Lions", "G2 Esports")]
 addedmatches += [newmatch("Team Vitality", "Team BDS", "Team Vitality")]
 addedmatches += [newmatch("SK Gaming", "Fnatic", "Fnatic")]
 addedmatches += [newmatch("KOI (Spanish Team)", "MAD Lions", "KOI (Spanish Team)")]
@@ -132,7 +133,10 @@ if curt1 is not None:
 
 def f(X, nb_matches, w):
 	def g(x):
-		return sum(g.nb_matches[t]/(1+10**(g.X[t]-x)) for t in g.X) - g.w
+		S = sum(g.nb_matches[t] for t in g.X)
+		return sum(g.nb_matches[t]/(1+10**(g.X[t]-x)) for t in g.X) - (g.w+1)/(S+2)*S
+		#Base formula (doesn't handle teams with 100% or 0% winrate
+		#return sum(g.nb_matches[t]/(1+10**(g.X[t]-x)) for t in g.X) - g.w
 	g.nb_matches = nb_matches.copy()
 	g.X = X.copy()
 	g.w = w
@@ -159,6 +163,7 @@ def find_elo(teams, results): ### ajouter le nombre de matchs (pour la LFL)
 	teams = teams.copy()
 	found = True
 	unbounded_pos, unbounded_neg = [], []
+	"""#Used to remove teams with 100% or 0% winrate
 	while found and len(teams)>0:
 		found = False
 		for t in teams:
@@ -172,22 +177,22 @@ def find_elo(teams, results): ### ajouter le nombre de matchs (pour la LFL)
 				unbounded_pos += [t]
 				teams.remove(t)
 				break
-
+	"""
 	nb_matches = {t1:{t2:results[t1][t2]+results[t2][t1] for t2 in teams} for t1 in teams}
 	n = len(teams)
 	X = {t:0 for t in teams}
 	W = {t:sum([results[t][t1] for t1 in teams]) for t in teams}
 	print(W)
 	err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t])(X[t])) for t in teams)
-	print(f'err={err}')
+	#print(f'err={err}')
 	#return
 	for _ in range(1000):
 		for i in range(1, n):
 			t = teams[i]
 			X[t] = dicho_incr(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t]))
-		print(f'iteration n°{_+1}', end=" ")
+		#print(f'iteration n°{_+1}', end=" ")
 		err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t])(X[t])) for t in teams)
-		print(f'err={err}')
+		#print(f'err={err}')
 	return X, unbounded_pos, unbounded_neg
 
 elo, ub_pos, ub_neg = find_elo(teams, results)
@@ -200,7 +205,8 @@ else:
 	targ = 2000
 diff = 400
 pelo = {t:((elo[t]-avg)*diff)+targ for t in elo}
-pprint(pelo)
+for e, t in sorted([(pelo[t],t) for t in pelo], reverse=True):
+	print(f'{t:3} {e:7.2f}')
 
 M = []
 tt = 0
