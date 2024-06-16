@@ -192,17 +192,18 @@ def find_elo(teams, results): ### ajouter le nombre de matchs (pour la LFL)
 			X[t] = dicho_incr(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t]))
 		#print(f'iteration n°{_+1}', end=" ")
 		err = sum(abs(f({t1:X[t1] for t1 in teams if (results[t][t1]+results[t1][t] != 0)}, nb_matches[t], W[t])(X[t])) for t in teams)
-		#print(f'err={err}')
+	print(f'err={err}')
 	return X, unbounded_pos, unbounded_neg
 
 elo, ub_pos, ub_neg = find_elo(teams, results)
-avg, m, M = sum(elo[t] for t in elo)/len(elo), min(elo[t] for t in elo), max(elo[t] for t in elo) #TODO: what if len(elo)==0?
+average, m, M = sum(elo[t] for t in elo)/len(elo), min(elo[t] for t in elo), max(elo[t] for t in elo) #TODO: what if len(elo)==0?
+
 if LEAGUE.lower() in ["lpl", "lck"]:
-	targ = 2600
+	target_average = 2600
 elif LEAGUE.lower() in ["lec", "lcs"]:
-	targ = 2500
+	target_average = 2500
 else:
-	targ = 2000
+	target_average = 2000
 diff = 400
 pelo = {t:((elo[t]-avg)*diff)+targ for t in elo}
 W = {t:int(sum([results[t][t1] for t1 in teams])) for t in teams}
