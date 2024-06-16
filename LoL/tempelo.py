@@ -205,8 +205,12 @@ else:
 	targ = 2000
 diff = 400
 pelo = {t:((elo[t]-avg)*diff)+targ for t in elo}
+W = {t:int(sum([results[t][t1] for t1 in teams])) for t in teams}
+L = {t:int(sum([results[t1][t] for t1 in teams])) for t in teams}
+currank = {t:len([t1 for t1 in teams if W[t1] > W[t]])+1 for t in teams}
+estrank = {t:len([t1 for t1 in teams if pelo[t1] > pelo[t]])+1 for t in teams}
 for e, t in sorted([(pelo[t],t) for t in pelo], reverse=True):
-	print(f'{t:3} {e:7.2f}')
+	print(f'{currank[t]},({W[t]}-{L[t]}),,{t:3},{e:7.2f},{estrank[t]}')
 
 M = []
 tt = 0

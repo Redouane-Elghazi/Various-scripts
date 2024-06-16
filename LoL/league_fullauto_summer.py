@@ -89,6 +89,8 @@ addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp
 addedmatches += [newmatch("SK Gaming", "Karmine Corp", "SK Gaming")]
 """
 
+
+
 print("There are {} matches".format(len(games+addedmatches)))
 
 curt1, curt2, curscore1, curscore2, gis = (None, None, None, None, None)
@@ -415,7 +417,8 @@ try:
 	for t1, t2 in M:
 		probawin[t1][t2] *= 2
 		probawin[t2][t1] *= 2
-except:
+except Exception as e:
+	print(e)
 	print("failed to load probabilities")
 	probawin = {t:dict() for t in teams}
 	for t1, t2 in M:
