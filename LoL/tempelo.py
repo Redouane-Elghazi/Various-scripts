@@ -196,14 +196,14 @@ def find_elo(teams, results): ### ajouter le nombre de matchs (pour la LFL)
 	return X, unbounded_pos, unbounded_neg
 
 elo, ub_pos, ub_neg = find_elo(teams, results)
-average, m, M = sum(elo[t] for t in elo)/len(elo), min(elo[t] for t in elo), max(elo[t] for t in elo) #TODO: what if len(elo)==0?
+avg, m, M = sum(elo[t] for t in elo)/len(elo), min(elo[t] for t in elo), max(elo[t] for t in elo) #TODO: what if len(elo)==0?
 
 if LEAGUE.lower() in ["lpl", "lck"]:
-	target_average = 2600
+	targ = 2600
 elif LEAGUE.lower() in ["lec", "lcs"]:
-	target_average = 2500
+	targ = 2500
 else:
-	target_average = 2000
+	targ = 2000
 diff = 400
 pelo = {t:((elo[t]-avg)*diff)+targ for t in elo}
 W = {t:int(sum([results[t][t1] for t1 in teams])) for t in teams}
