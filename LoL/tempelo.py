@@ -229,39 +229,41 @@ for t1 in teams:
 print(tt, len(M))
 
 probawin = {t:dict() for t in teams}
-for t1, t2 in M:
-	if t1 in ub_pos and t2 in ub_pos:
-		print(f'{t1},,skipped,skipped,,{t2}')
-		print(f'{t2},,skipped,skipped,,{t1}')
-		pass
-	elif t1 in ub_pos:
-		probawin[t1][t2] = 1
-		probawin[t2][t1] = 0
-		print(f'{t1},,1,0,,{t2}')
-		print(f'{t2},,0,1,,{t1}')
-	elif t2 in ub_pos:
-		probawin[t1][t2] = 0
-		probawin[t2][t1] = 1
-		print(f'{t1},,0,1,,{t2}')
-		print(f'{t2},,1,0,,{t1}')
-	elif t1 in ub_neg and t2 in ub_neg:
-		print(f'{t1},,skipped,skipped,,{t2}')
-		print(f'{t2},,skipped,skipped,,{t1}')
-	elif t1 in ub_neg:
-		probawin[t1][t2] = 0
-		probawin[t2][t1] = 1
-		print(f'{t1},,0,1,,{t2}')
-		print(f'{t2},,1,0,,{t1}')
-	elif t2 in ub_neg:
-		probawin[t1][t2] = 1
-		probawin[t2][t1] = 0
-		print(f'{t1},,1,0,,{t2}')
-		print(f'{t2},,0,1,,{t1}')
-	else:
-		probawin[t1][t2] = 1/(1+10**(elo[t2]-elo[t1]))
-		probawin[t2][t1] = 1/(1+10**(elo[t1]-elo[t2]))
-		print(f'{t1},,{1/(1+10**(elo[t2]-elo[t1]))},vs,{1/(1+10**(elo[t1]-elo[t2]))},,{t2}')
-		print(f'{t2},,{1/(1+10**(elo[t1]-elo[t2]))},vs,{1/(1+10**(elo[t2]-elo[t1]))},,{t1}')
+for t1 in teams:
+	for t2 in teams:
+		if t1!=t2:
+			if t1 in ub_pos and t2 in ub_pos:
+				print(f'{t1},,skipped,skipped,,{t2}')
+				print(f'{t2},,skipped,skipped,,{t1}')
+				pass
+			elif t1 in ub_pos:
+				probawin[t1][t2] = 1
+				probawin[t2][t1] = 0
+				print(f'{t1},,1,0,,{t2}')
+				print(f'{t2},,0,1,,{t1}')
+			elif t2 in ub_pos:
+				probawin[t1][t2] = 0
+				probawin[t2][t1] = 1
+				print(f'{t1},,0,1,,{t2}')
+				print(f'{t2},,1,0,,{t1}')
+			elif t1 in ub_neg and t2 in ub_neg:
+				print(f'{t1},,skipped,skipped,,{t2}')
+				print(f'{t2},,skipped,skipped,,{t1}')
+			elif t1 in ub_neg:
+				probawin[t1][t2] = 0
+				probawin[t2][t1] = 1
+				print(f'{t1},,0,1,,{t2}')
+				print(f'{t2},,1,0,,{t1}')
+			elif t2 in ub_neg:
+				probawin[t1][t2] = 1
+				probawin[t2][t1] = 0
+				print(f'{t1},,1,0,,{t2}')
+				print(f'{t2},,0,1,,{t1}')
+			else:
+				probawin[t1][t2] = 1/(1+10**(elo[t2]-elo[t1]))
+				probawin[t2][t1] = 1/(1+10**(elo[t1]-elo[t2]))
+				print(f'{t1},,{1/(1+10**(elo[t2]-elo[t1]))},vs,{1/(1+10**(elo[t1]-elo[t2]))},,{t2}')
+				print(f'{t2},,{1/(1+10**(elo[t1]-elo[t2]))},vs,{1/(1+10**(elo[t2]-elo[t1]))},,{t1}')
 
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-probawin.out', 'w') as f:
 	json.dump(probawin, f)

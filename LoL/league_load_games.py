@@ -16,6 +16,13 @@ games = leaguepedia_parser.get_games("{}/{} Season/{} Season".format(LEAGUE, YEA
 games = list(sorted(games, key=lambda g:(sorted([g.teams.BLUE.sources.leaguepedia.name, g.teams.RED.sources.leaguepedia.name]), datetime.strptime(g.start[:19], format="%Y-%m-%dT%H:%M:%S"), g.gameInSeries)))
 g_json = [(g.teams.BLUE.sources.leaguepedia.name, g.teams.RED.sources.leaguepedia.name, [g.teams.BLUE.sources.leaguepedia.name, g.teams.RED.sources.leaguepedia.name][g.winner=='RED'], g.gameInSeries) for g in games if g.winner in ['BLUE', 'RED']]
 
+"""
+g_json += [("Vitality.Bee", "Karmine Corp Blue", "Karmine Corp Blue")]
+g_json += [("Team BDS Academy", "Solary", "Team BDS Academy")]
+g_json += [("Team Du Sud", "GameWard", "GameWard")]
+g_json += [("Aegis (French Team)", "Team GO", "Team GO")]
+g_json += [("Gentle Mates", "BK ROG Esports", "Team Du Sud")]
+"""
 with open(f'{LEAGUE}/{LEAGUE}-{SEASON}-{YEAR}-games.out', 'w') as f:
 	json.dump(g_json, f)
 

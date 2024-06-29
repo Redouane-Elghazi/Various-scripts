@@ -84,9 +84,14 @@ addedmatches += [newmatch("SK Gaming", "Team Vitality", "Team Vitality")]
 addedmatches += [newmatch("Team Heretics", "Team Vitality", "Team Heretics")]
 
 
-addedmatches += [newmatch("Team BDS", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("Rogue (European Team)", "Karmine Corp", "Karmine Corp")]
-addedmatches += [newmatch("SK Gaming", "Karmine Corp", "SK Gaming")]
+addedmatches += [newmatch("Team Heretics", "Fnatic", "Fnatic")]
+addedmatches += [newmatch("Team Heretics", "G2 Esports", "G2 Esports")]
+addedmatches += [newmatch("Team Vitality", "G2 Esports", "G2 Esports")]
+addedmatches += [newmatch("Team Vitality", "SK Gaming", "SK Gaming")]
+#addedmatches += [newmatch("GIANTX", "Karmine Corp", "Karmine Corp")]
+#addedmatches += [newmatch("GIANTX", "Karmine Corp", "Karmine Corp")]
+addedmatches += [newmatch("Rogue (European Team)", "MAD Lions KOI", "Rogue (European Team)")]
+addedmatches += [newmatch("Team BDS", "MAD Lions KOI", "Team BDS")]
 """
 
 
@@ -259,6 +264,7 @@ def classements(teams, results, p, offset=0, R=None):
 		i = 0
 		j = 0
 		while i<n:
+			#TODO: use h2h again
 			while j<n and ((W[T[i]], SoV[T[i]]) == (W[T[j]], SoV[T[j]]) or (7==i and W[T[7]] == W[T[8]] == W[T[j]]) or (6==i and W[T[6]] == W[T[7]] == W[T[8]] == W[T[j]] and W[T[6]] != W[T[9]])):
 				j += 1
 			if 'KC' in T[i:j]:
@@ -278,7 +284,7 @@ def classements(teams, results, p, offset=0, R=None):
 				#print(tiet8)
 				tie8+=1
 				#print("tie8:", tie8)
-			if i+2==j:
+			if i+2==j and not(i<=7 and 9<=j):
 				t1, t2 = T[i], T[i+1]
 				if results[t1][t2] < results[t2][t1]:
 					perms = [[t2, t1]]
